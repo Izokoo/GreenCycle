@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GreenCycle</title>
+
+    <style>
+        body { font-family: Arial; background:#f4f6f8; padding:20px; }
+        .container { max-width:700px; margin:auto; }
+        .card { background:white; padding:20px; margin-bottom:20px; border-radius:10px; }
+
+        label { font-weight:bold; display:block; margin-top:10px; }
+        input, select { width:100%; padding:8px; margin-top:5px; }
+
+        button {
+            width:100%;
+            padding:10px;
+            background:green;
+            color:white;
+            border:none;
+            margin-top:10px;
+        }
+
+        .hidden { display:none; }
+
+        .collecte {
+            border:1px solid #ccc;
+            padding:10px;
+            margin-top:10px;
+            border-radius:8px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- AUTH -->
+    <div id="auth">
+
+        <div class="card">
+            <h2>Connexion</h2>
+
+            <label>Email</label>
+            <input id="loginEmail">
+
+            <label>Mot de passe</label>
+            <input id="loginPassword" type="password">
+
+            <button onclick="login()">Se connecter</button>
+        </div>
+
+        <div class="card">
+            <h2>Inscription</h2>
+
+            <label>Nom</label>
+            <input id="nom">
+
+            <label>Prénom</label>
+            <input id="prenom">
+
+            <label>Email</label>
+            <input id="email">
+
+            <label>Mot de passe</label>
+            <input id="password" type="password">
+
+            <label>Rôle</label>
+            <select id="role">
+                <option value="USER">Citoyen</option>
+                <option value="COLLECTOR">Collecteur</option>
+            </select>
+
+            <button onclick="register()">Créer compte</button>
+
+        </div>
+
+    </div>
+
+    <!-- APP -->
+    <div id="app" class="hidden">
+
+        <div class="card">
+            <h2>Profil</h2>
+            <div id="profile"></div>
+            <button onclick="logout()">Déconnexion</button>
+        </div>
+
+        <div class="card">
+            <h2>Créer une collecte</h2>
+
+            <label>Type</label>
+            <input id="type">
+
+            <label>Quantité</label>
+            <input id="quantite">
+
+            <label>Localisation</label>
+            <input id="localisation">
+
+            <button onclick="createCollecte()">Créer</button>
+
+        </div>
+
+        <div class="card">
+            <h2>Collectes</h2>
+            <button onclick="loadCollectes()">Actualiser</button>
+            <div id="collectes"></div>
+        </div>
+
+        <!-- ✅ LEADERBOARD FIX -->
+        <div class="card">
+            <h2>Leaderboard</h2>
+            <button onclick="loadLeaderboard()">Actualiser</button>
+            <div id="leaderboard"></div>
+        </div>
+
+        <div class="card">
+            <h2>Chatbot</h2>
+            <input id="question" placeholder="ex: ou jeter pile">
+            <button onclick="chat()">Envoyer</button>
+            <p id="response"></p>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    const API="http://localhost:8080";
+    let currentUser=null;
+
+    /* UI */
+    function showApp(){
+    auth.classList.add("hidden");
+    app.classList.remove("hidden");
+    }
+
+    function logout(){
+    currentUser=null;
+    location.reload();
+    }
+
+    /* ROLE LABEL */
+    function roleLabel(role){
+    return role === "COLLECTOR" ? "Collecteur" : "Citoyen";
+    }
+
+    /* LOGIN */
+    function login(){
+    fetch(API+"/users/login",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+    email:loginEmail.value,
+    motDePasse:loginPassword.value
+    })
+    })
+    .then(r=>r.json())
+    .then(u=>{
+    if(!u.id){alert("Login échoué");return;}
+    currentUser=u;
+    showApp();
+    loadProfile();
+    loadCollectes();
+    loadLeaderboard();
+    });
+    }
+
+    /* REGISTER */
+    function register(){
+    fetch(API+"/users/register",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+    nom:nom.value,
+    prenom:prenom.value,
+    email:email.value,
+    motDePasse:password.value,
+    role:role.value
+    })
+    })
+    .then(()=>alert("Compte créé"));
+    }
+
+    /* PROFILE */
+    function loadProfile(){
+    profile.innerHTML = `
+    <p><strong>${currentUser.nom}</strong></p>
+    <p>Rôle: ${roleLabel(currentUser.role)}</p>
+    <p>Points: ${currentUser.pointsEcologiques}</p>
+    `;
+    }
+
+    /* CREATE */
+    function createCollecte(){
+    fetch(`${API}/collectes?citoyenId=${currentUser.id}`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+    typeDechet:type.value,
+    quantite:parseFloat(quantite.value),
+    localisation:localisation.value
+    })
+    })
+    .then(()=>loadCollectes());
+    }
+
+    /* LOAD COLLECTES */
+    function loadCollectes(){
+    fetch(API+"/collectes")
+    .then(r=>r.json())
+    .then(data=>{
+    let html="";
+
+    data.forEach(c=>{
+
+    let statutColor =
+    c.statut === "EN_ATTENTE" ? "orange" :
+    c.statut === "EN_COURS" ? "blue" :
+    "green";
+
+    html+=`
+    <div class="collecte">
+    <p><strong>${c.typeDechet}</strong> (${c.quantite} kg)</p>
+
+    <p style="color:${statutColor}">
+    Statut: ${c.statut}
+    </p>
+
+    <p>Citoyen: ${c.citoyen?.nom || "?"}</p>
+    <p>Collecteur: ${c.collecteur?.nom || "Non assigné"}</p>
+
+    <!-- 🔥 boutons toujours visibles -->
+    <button onclick="prendre(${c.id})">Prendre</button>
+    <button onclick="terminer(${c.id})">Terminer</button>
+
+    </div>
+    `;
+    });
+
+    collectes.innerHTML = html;
+    });
+    }
+
+    /* ACTIONS */
+    function prendre(id){
+    fetch(`${API}/collectes/${id}/prendre?collecteurId=${currentUser.id}`,{method:"PUT"})
+    .then(loadCollectes);
+    }
+
+    function terminer(id){
+    fetch(`${API}/collectes/${id}/terminer`,{method:"PUT"})
+    .then(()=>{
+    loadCollectes();
+    loadProfile();
+    loadLeaderboard();
+    });
+    }
+
+    /* ✅ LEADERBOARD */
+    function loadLeaderboard(){
+    fetch(API+"/users/leaderboard")
+    .then(r=>r.json())
+    .then(data=>{
+    let html="";
+    data.forEach((u,i)=>{
+    html+=`<p>#${i+1} ${u.nom} (${roleLabel(u.role)}) - ${u.pointsEcologiques} pts</p>`;
+    });
+    leaderboard.innerHTML=html;
+    });
+    }
+
+    /* CHATBOT */
+    function chat(){
+    fetch(API+"/chatbot",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({question:question.value})
+    })
+    .then(r=>r.text())
+    .then(res=>response.innerText=res);
+    }
+
+</script>
+
+</body>
+</html>
