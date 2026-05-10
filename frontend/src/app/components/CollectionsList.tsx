@@ -1,6 +1,7 @@
 import { MapPin, User, Package, Navigation } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import RouteOptimizer from './RouteOptimizer';
+import { apiUrl } from '@/lib/api';
 
 interface Collection {
   id: number;
@@ -25,7 +26,7 @@ export default function CollectionsList({ userRole, onTakeCollection, onComplete
 
   // 🔥 LOAD FROM BACKEND
   const loadCollectes = () => {
-    fetch("http://localhost:8080/collectes")
+    fetch(apiUrl("/collectes"))
       .then(res => res.json())
       .then(data => {
 
@@ -50,7 +51,7 @@ export default function CollectionsList({ userRole, onTakeCollection, onComplete
 
   // 🔥 PRENDRE
   const handleTake = (id: number) => {
-    fetch(`http://localhost:8080/collectes/${id}/prendre?collecteurId=1`, {
+    fetch(`${apiUrl(`/collectes/${id}/prendre`)}?collecteurId=1`, {
       method: "PUT"
     }).then(() => {
       loadCollectes();
@@ -60,7 +61,7 @@ export default function CollectionsList({ userRole, onTakeCollection, onComplete
 
   // 🔥 TERMINER
   const handleComplete = (id: number) => {
-    fetch(`http://localhost:8080/collectes/${id}/terminer`, {
+    fetch(apiUrl(`/collectes/${id}/terminer`), {
       method: "PUT"
     }).then(() => {
       loadCollectes();

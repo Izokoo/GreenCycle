@@ -7,6 +7,7 @@ import CreateCollection from './components/CreateCollection';
 import CollectionsList from './components/CollectionsList';
 import Leaderboard from './components/Leaderboard';
 import Chatbot from './components/Chatbot';
+import { apiUrl } from '@/lib/api';
 
 interface User {
   id: number;
@@ -35,7 +36,7 @@ export default function App() {
   const refreshUser = async () => {
     if (!user) return;
 
-    const res = await fetch("http://localhost:8080/users");
+    const res = await fetch(apiUrl("/users"));
     const users = await res.json();
 
     const updated = users.find((u: any) => u.id === user.id);

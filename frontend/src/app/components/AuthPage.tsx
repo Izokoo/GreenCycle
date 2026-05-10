@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { apiUrl } from '@/lib/api';
 
 interface AuthPageProps {
   // 🔥 on ajoute id dans le user retourné
@@ -22,7 +23,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:8080/users/login", {
+      const res = await fetch(apiUrl("/users/login"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -63,7 +64,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:8080/users/register", {
+      const res = await fetch(apiUrl("/users/register"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

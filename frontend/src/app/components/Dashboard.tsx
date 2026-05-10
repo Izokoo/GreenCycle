@@ -1,5 +1,6 @@
 import { Recycle, Users, TrendingUp, Award } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { apiUrl } from '@/lib/api';
 
 interface DashboardProps {
   user: {
@@ -21,7 +22,7 @@ export default function Dashboard({ user }: DashboardProps) {
   useEffect(() => {
 
     // USERS + RANK
-    fetch("http://localhost:8080/users")
+    fetch(apiUrl("/users"))
       .then(res => res.json())
       .then(users => {
 
@@ -43,7 +44,7 @@ export default function Dashboard({ user }: DashboardProps) {
       });
 
     // COLLECTES
-    fetch("http://localhost:8080/collectes")
+    fetch(apiUrl("/collectes"))
       .then(res => res.json())
       .then(data => {
 

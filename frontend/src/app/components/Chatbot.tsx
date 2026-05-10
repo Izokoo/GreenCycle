@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import React, { useState, type KeyboardEvent } from 'react';
 import { Send, Bot, User } from 'lucide-react';
+import { apiUrl } from '../../lib/api';
 
 interface Message {
   id: number;
@@ -19,28 +20,7 @@ export default function Chatbot() {
   ]);
   const [inputText, setInputText] = useState('');
 
-  const botResponses: { [key: string]: string } = {
-    plastique: "Le plastique doit être trié par type. Les bouteilles et flacons vont dans le bac jaune. Pensez à les vider et à retirer les bouchons !",
-    verre: "Le verre se recycle à l'infini ! Déposez vos bouteilles et bocaux dans les conteneurs verts. Attention : pas de vaisselle ou miroirs.",
-    papier: "Le papier et le carton vont dans le bac bleu. Évitez le papier gras ou souillé qui ne peut pas être recyclé.",
-    métal: "Les métaux (canettes, boîtes de conserve) se recyclent dans le bac jaune. Inutile de les laver, il suffit de les vider.",
-    organique: "Les déchets organiques peuvent être compostés ! Épluchures, marc de café, coquilles d'œufs... créez votre compost.",
-    électronique: "Les déchets électroniques doivent être apportés en déchetterie ou dans des points de collecte spéciaux. Ne les jetez jamais à la poubelle !",
-    points: "Vous gagnez des GreenPoints en créant des collectes et en recyclant. Plus vous recyclez, plus vous montez dans le classement !",
-    default: "Excellente question ! En matière de recyclage, l'essentiel est de trier correctement. Posez-moi des questions sur le plastique, le verre, le papier, le métal, l'organique ou l'électronique !"
-  };
-
-  const getBotResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
-    for (const [key, response] of Object.entries(botResponses)) {
-      if (lowerMessage.includes(key)) {
-        return response;
-      }
-    }
-    return botResponses.default;
-  };
-
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputText.trim()) return;
 
     const userMessage: Message = {
@@ -52,20 +32,35 @@ export default function Chatbot() {
 
     setMessages([...messages, userMessage]);
 
-    setTimeout(() => {
-      const botMessage: Message = {
-        id: messages.length + 2,
-        text: getBotResponse(inputText),
-        sender: 'bot',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
-    }, 500);
+    let botText = "Erreur serveur";
+    try {
+      const res = await fetch(apiUrl("/chatbot"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ question: inputText })
+      });
+      botText = await res.text();
+      if (!res.ok && !botText) {
+        botText = "Erreur chatbot";
+      }
+    } catch {
+      botText = "Serveur chatbot inaccessible";
+    }
+
+    const botMessage: Message = {
+      id: messages.length + 2,
+      text: botText,
+      sender: 'bot',
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, botMessage]);
 
     setInputText('');
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -131,6 +126,7 @@ export default function Chatbot() {
               />
               <button
                 onClick={handleSend}
+                type="button"
                 className="px-6 py-3 bg-[#2ecc71] text-white rounded-lg hover:bg-[#27ae60] transition-colors flex items-center gap-2"
               >
                 <Send className="w-5 h-5" />
@@ -143,6 +139,7 @@ export default function Chatbot() {
                 <button
                   key={suggestion}
                   onClick={() => setInputText(suggestion)}
+                  type="button"
                   className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
                 >
                   {suggestion}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MapPin, Package, Weight } from 'lucide-react';
+import { apiUrl } from '@/lib/api';
 
 interface CreateCollectionProps {
   userId: number; // 🔥 AJOUT
@@ -20,7 +21,7 @@ export default function CreateCollection({ userId, onCreateCollection }: CreateC
     if (!wasteType || !quantity || !location) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/collectes?citoyenId=${userId}`, {
+      const res = await fetch(`${apiUrl('/collectes')}?citoyenId=${userId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

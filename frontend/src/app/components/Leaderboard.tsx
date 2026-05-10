@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Trophy, Medal, Award } from 'lucide-react';
+import { apiUrl } from '@/lib/api';
 
 interface LeaderboardUser {
   rank: number;
@@ -15,7 +16,7 @@ export default function Leaderboard() {
   const [users, setUsers] = useState<LeaderboardUser[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/users/leaderboard")
+    fetch(apiUrl("/users/leaderboard"))
       .then(res => res.json())
       .then(data => {
 
